@@ -33,5 +33,13 @@
 			"\t)",
 			"}"
 		]
+	},
+	"Arrow method": {
+		"prefix": "mthd",
+		"body": [
+			"const $1 = (${2:props}) => {",
+			"\t$0",
+			"}"
+		]
 	}
 }
