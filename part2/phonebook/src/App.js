@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import personsService from './services/persons'
 
 const PersonFilter = ({nameFilter, onFilterChanged}) => <div>filter shown with <input value={nameFilter} onChange={onFilterChanged} /></div>
 
@@ -12,14 +12,14 @@ const PersonForm = ({onSubmit, name, phone, onNameChanged, onPhoneChanged}) =>
     </form>
   </div>
 
-const Persons = ({persons, nameFilter}) => {
+const Persons = ({persons, nameFilter, onDeletePerson}) => {
   let filteredPersons = nameFilter ? persons.filter((person) => person.name.includes(nameFilter)) : persons
   return (
-    <div>{filteredPersons.map((person) => <Person key={person.name} person={person} />)}</div>
+    <div>{filteredPersons.map((person) => <Person key={person.name} person={person} onDeletePerson={onDeletePerson} />)}</div>
   )
 }
 
-const Person = ({person}) => <p key={person.name}>{person.name} {person.number}</p>
+const Person = ({person, onDeletePerson}) => <p key={person.name}>{person.name} {person.number} <button onClick={() => onDeletePerson(person)}>delete</button></p>
 
 const App = () => {
   const [ persons, setPersons ] = useState([])
@@ -28,26 +28,50 @@ const App = () => {
   const [ nameFilter, setNameFilter ] = useState('')
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
-      })
+    personsService.getAll().then(allPersons => setPersons(allPersons))
   }, [])
 
   const addNewPerson = (event) => {
     event.preventDefault()
-    if (persons.find((person) => person.name === newName)) {
-      window.alert(`${newName} is already added to the phonebook`)
-    } else {
-      var newPerson = {
-        name: newName,
-        number: newPhone
+    if (newName.length > 0) {
+      var existingPerson = persons.find((person) => person.name === newName)
+      if (existingPerson) {
+        if (window.confirm(`${newName} is already added to the phonebook, replace the old number with a new one?`)) {
+          var updatedPerson = {...existingPerson, number: newPhone}
+          personsService
+            .updatePerson(updatedPerson.id, updatedPerson)
+            .then((newPerson) => {
+              setPersons(persons.map((currentPerson) => currentPerson.id === newPerson.id ? newPerson : currentPerson))
+              setNewName('')
+              setNewPhone('')
+            })
+        } else {
+          return;
+        }
+      } else {
+        var newPerson = {
+          name: newName,
+          number: newPhone
+        }
+        personsService
+          .addPerson(newPerson)
+          .then((addedPerson) => {
+            let newPersons = persons.concat(addedPerson)
+            setPersons(newPersons)
+            setNewName('')
+            setNewPhone('')
+          })
       }
-      let newPersons = persons.concat(newPerson)
-      setPersons(newPersons)
-      setNewName('')
-      setNewPhone('')
+    } else {
+      window.alert("Name field can't be empty")
+    }
+  }
+
+  const deletePerson = (personToDelete) => {
+    if (window.confirm(`Delete ${personToDelete.name}?`)) {
+      personsService
+      .deletePerson(personToDelete.id)
+      .then(() => setPersons(persons.filter((person) => person.id !== personToDelete.id)))
     }
   }
 
@@ -61,7 +85,7 @@ const App = () => {
       <h3>add a new</h3>
       <PersonForm onSubmit={addNewPerson} name={newName} phone={newPhone} onNameChanged={onNameChanged} onPhoneChanged={onPhoneChanged} />
       <h3>Phones</h3>
-      <Persons persons={persons} nameFilter={nameFilter}/>
+      <Persons persons={persons} nameFilter={nameFilter} onDeletePerson={(person) => deletePerson(person)}/>
     </div>
   )
 }
