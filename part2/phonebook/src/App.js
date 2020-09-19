@@ -22,7 +22,7 @@ const Persons = ({persons, nameFilter}) => {
 const Person = ({person}) => <p key={person.name}>{person.name} {person.number}</p>
 
 const App = () => {
-  const [persons, setPersons] = useState([])
+  const [ persons, setPersons ] = useState([])
   const [ newName, setNewName ] = useState('')
   const [ newPhone, setNewPhone ] = useState('')
   const [ nameFilter, setNameFilter ] = useState('')
