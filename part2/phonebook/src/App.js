@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import axios from 'axios'
 
 const PersonFilter = ({nameFilter, onFilterChanged}) => <div>filter shown with <input value={nameFilter} onChange={onFilterChanged} /></div>
 
@@ -18,18 +19,21 @@ const Persons = ({persons, nameFilter}) => {
   )
 }
 
-const Person = ({person}) => <p key={person.name}>{person.name} {person.phone}</p>
+const Person = ({person}) => <p key={person.name}>{person.name} {person.number}</p>
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', phone: '040-123456' },
-    { name: 'Ada Lovelace', phone: '39-44-5323523' },
-    { name: 'Dan Abramov', phone: '12-43-234345' },
-    { name: 'Mary Poppendieck', phone: '39-23-6423122' }
-  ])
+  const [persons, setPersons] = useState([])
   const [ newName, setNewName ] = useState('')
   const [ newPhone, setNewPhone ] = useState('')
   const [ nameFilter, setNameFilter ] = useState('')
+
+  useEffect(() => {
+    axios
+      .get('http://localhost:3001/persons')
+      .then(response => {
+        setPersons(response.data)
+      })
+  }, [])
 
   const addNewPerson = (event) => {
     event.preventDefault()
@@ -38,7 +42,7 @@ const App = () => {
     } else {
       var newPerson = {
         name: newName,
-        phone: newPhone
+        number: newPhone
       }
       let newPersons = persons.concat(newPerson)
       setPersons(newPersons)
