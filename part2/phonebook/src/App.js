@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import personsService from './services/persons'
+import './App.css'
 
 const PersonFilter = ({nameFilter, onFilterChanged}) => <div>filter shown with <input value={nameFilter} onChange={onFilterChanged} /></div>
 
@@ -21,15 +22,50 @@ const Persons = ({persons, nameFilter, onDeletePerson}) => {
 
 const Person = ({person, onDeletePerson}) => <p key={person.name}>{person.name} {person.number} <button onClick={() => onDeletePerson(person)}>delete</button></p>
 
+const ErrorMessage = ({message}) => {
+  if (message) {
+    return (
+      <div className="error">
+        {message}   
+      </div>
+    )
+  }
+  else
+  {
+    return null;
+  }
+}
+
+const SuccessMessage = ({message}) => {
+  if (message) {
+    return (
+      <div className="success">
+        {message}   
+      </div>
+    )
+  }
+  else
+  {
+    return null;
+  }
+}
+
 const App = () => {
   const [ persons, setPersons ] = useState([])
   const [ newName, setNewName ] = useState('')
   const [ newPhone, setNewPhone ] = useState('')
   const [ nameFilter, setNameFilter ] = useState('')
+  const [ errorMessage, setErrorMessage ] = useState(undefined)
+  const [ successMessage, setSuccessMessage ] = useState(undefined)
 
   useEffect(() => {
     personsService.getAll().then(allPersons => setPersons(allPersons))
   }, [])
+
+  const showTimedMessage = (setMessage, message, timer) => {
+    setMessage(message)
+    setTimeout(() => setMessage(''), timer)
+  }
 
   const addNewPerson = (event) => {
     event.preventDefault()
@@ -42,6 +78,16 @@ const App = () => {
             .updatePerson(updatedPerson.id, updatedPerson)
             .then((newPerson) => {
               setPersons(persons.map((currentPerson) => currentPerson.id === newPerson.id ? newPerson : currentPerson))
+              setNewName('')
+              setNewPhone('')
+            })
+            .catch((error) => {
+              debugger
+              if (error.response.status === 404) {
+                showTimedMessage(setErrorMessage, `Information of ${newName} has already been removed from the server`, 4000)
+              } else {
+                showTimedMessage(setErrorMessage, `An error has occurred`, 4000)
+              }
               setNewName('')
               setNewPhone('')
             })
@@ -60,7 +106,10 @@ const App = () => {
             setPersons(newPersons)
             setNewName('')
             setNewPhone('')
+            setErrorMessage('')
+            showTimedMessage(setSuccessMessage, `Added ${addedPerson.name}`, 4000)
           })
+          .catch(() => showTimedMessage(setErrorMessage, `An error has occurred`, 4000))
       }
     } else {
       window.alert("Name field can't be empty")
@@ -81,6 +130,8 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <SuccessMessage message={successMessage} />
+      <ErrorMessage message={errorMessage} />
       <PersonFilter persons={persons} onFilterChanged={(event) => setNameFilter(event.target.value)}  />
       <h3>add a new</h3>
       <PersonForm onSubmit={addNewPerson} name={newName} phone={newPhone} onNameChanged={onNameChanged} onPhoneChanged={onPhoneChanged} />
