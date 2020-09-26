@@ -86,7 +86,7 @@ const App = () => {
               if (error.response.status === 404) {
                 showTimedMessage(setErrorMessage, `Information of ${newName} has already been removed from the server`, 4000)
               } else {
-                showTimedMessage(setErrorMessage, `An error has occurred`, 4000)
+                showTimedMessage(setErrorMessage, error.response.data.error, 4000)
               }
               setNewName('')
               setNewPhone('')
@@ -109,7 +109,10 @@ const App = () => {
             setErrorMessage('')
             showTimedMessage(setSuccessMessage, `Added ${addedPerson.name}`, 4000)
           })
-          .catch(() => showTimedMessage(setErrorMessage, `An error has occurred`, 4000))
+          .catch((error) => {
+            console.log(error)
+            showTimedMessage(setErrorMessage, error.response.data.error, 4000)
+          })
       }
     } else {
       window.alert("Name field can't be empty")
